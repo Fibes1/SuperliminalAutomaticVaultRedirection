@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,24 +13,36 @@ namespace AutomaticVaultRedirection
     public class AutomaticVaultRedirection : MelonMod
     {
         public static float rotation = 0f;
+        public static bool relative = true;
+        private static readonly Dictionary<KeyCode, float> defaultRotations = new Dictionary<KeyCode, float>
+        {
+            {KeyCode.Alpha0, 0f},
+            {KeyCode.Alpha1, 270f},
+            {KeyCode.Alpha2, 90f},
+            {KeyCode.Alpha3, 180f}
+        };
 
         public override void OnUpdate()
         {
-            if (Input.GetKeyDown(KeyCode.Alpha1))
+            if (GameManager.GM.player == null)
             {
-                rotation = 270f;
+                return;
             }
-            else if (Input.GetKeyDown(KeyCode.Alpha2))
+
+            foreach (var entry in defaultRotations)
             {
-                rotation = 90f;
+                if (Input.GetKeyDown(entry.Key))
+                {
+                    rotation = entry.Value;
+                    relative = true;
+                    return;
+                }
             }
-            else if (Input.GetKeyDown(KeyCode.Alpha3))
+
+            if (Input.GetKeyDown(KeyCode.Alpha4))
             {
-                rotation = 180f;
-            }
-            else if (Input.GetKeyDown(KeyCode.Alpha0))
-            {
-                rotation = 0f;
+                rotation = GameManager.GM.player.GetComponentInChildren<Camera>().transform.rotation.eulerAngles.y;
+                relative = false;
             }
         }
     }
@@ -40,7 +52,16 @@ namespace AutomaticVaultRedirection
     {
         private static void Prefix()
         {
-            GameManager.GM.player.GetComponent<CharacterMotor>().transform.Rotate(new Vector3(0f, AutomaticVaultRedirection.rotation, 0f));
+            CharacterMotor motor = GameManager.GM.player.GetComponent<CharacterMotor>();
+            Vector3 rotationVector = new Vector3(0f, AutomaticVaultRedirection.rotation, 0f);
+            if (AutomaticVaultRedirection.relative)
+            {
+                motor.transform.Rotate(rotationVector);
+            }
+            else
+            {
+                motor.transform.eulerAngles = rotationVector;
+            }
         }
     }
 }
